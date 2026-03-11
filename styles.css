@@ -1,5 +1,5 @@
 :root{
-  --bg:#0b1220; --card:#121b2e; --text:#e9edf5; --muted:#aab3c5;
+  --bg:#070411; --card:#121b2e; --text:#e9edf5; --muted:#aab3c5;
   --line:#22304f; --accent:#7aa2ff; --good:#5ce1a6;
 }
 *{box-sizing:border-box}
@@ -22,3 +22,24 @@ body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);c
 .badge{position:absolute;left:8px;top:8px;border:1px solid var(--line);background:rgba(18,27,46,.85);padding:4px 8px;border-radius:999px;font-size:12px}
 .bottom{padding:14px 16px;border-top:1px solid var(--line)}
 @media (max-width: 900px){.layout{grid-template-columns:1fr}}
+
+.controls{
+  position:absolute;
+  left: 12px;
+  bottom: 1px;
+  display: flex;
+  gap: 12px;
+}
+
+.controls button{
+  background-color: #022534;
+  border: 1px solid var(--line);
+  color: white;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.frame img.fade-out{
+  opacity: 0;
+}
