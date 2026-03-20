@@ -15,9 +15,17 @@ const heroDesc = document.querySelector('#heroDesc');
 const likeBtn = document.querySelector('#likeBtn');
 const counter = document.querySelector('#counter');
 
+const prevBtn = document.querySelector("#prevBtn") ;
+const nextBtn = document.querySelector("#nextBtn");
+const playBtn = document.querySelector("#playBtn");
+
 // Variables para el estado de la aplicacion
 let currentIndex = 0;
 let likes = {};
+
+let autoPlayId = null;
+let isPlaying = false;
+const AUTO_TIME = 3000; // Tiempo en milisegundos para el autoplay
 
 // Funcion par arenderizar miniaturas
 function renderThumbs() {
@@ -48,6 +56,38 @@ function renderHero( index ){
   counter.textContent = `${index + 1} / ${data.length}`;
 }
 
+// Actualizar el boton de reproduccion
+function updatePlayButton(){}
+
+// Funcion cambiar de imagen
+function changeSlide( newIndex ){
+  heroImg.classList.add("fade-out");
+  setTimeout(() => {
+    currentIndex= newIndex;
+    renderHero( currentIndex );
+    heroImg.classList.remove("fade-out");
+  }, 350);
+};
+
+function nextSlide(){
+  const newIndex = (current +1) % data.length;
+  changeSlide( newIndex );
+}
+
+function prevSlide(){
+  const newIndex = (currentIndex -1 + data.length) % data.length;
+  changeSlide( newIndex );
+}
+
+function starAutoPlay (){
+  autoPlayId = setInterval( () =>{
+    nextSlide();
+  }, AUTO_TIME);
+  
+  isPlaying= true;
+  updatePlayButton();
+}
+
 // Evento para manejar el click del boton me gusta
 likeBtn.addEventListener("click", () => {
   const currentItem = data [currentIndex];
@@ -74,3 +114,4 @@ thumbs.addEventListener("click", (e) => {
 });
 
 renderThumbs();
+renderHero( currentIndex );
