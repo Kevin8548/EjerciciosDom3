@@ -53,11 +53,35 @@ function renderHero( index ){
   heroDesc.textContent = item.desc;
 
   //Actualizar el contador de las imagenes
-  counter.textContent = `${index + 1} / ${data.length}`;
+  updateCounter();
+  updateActiveThumb();
+  updateLikeBtn();
 }
 
 // Actualizar el boton de reproduccion
-function updatePlayButton(){}
+function updatePlayButton(){
+  playBtn.textContent = isPlaying ? "⏸️" : "▶️";
+  playBtn.dataset.state = isPlaying ? "stop" : "play";
+}
+
+function updateCounter(){
+  counter.textContent = `${ currentIndex + 1} / ${data.length}`;
+}
+ //Cambio en la miniatura
+function updateActiveThumb(){
+  document.querySelectorAll(".thumb").forEach( (thumb, i)=>{
+  thumb.classList.toggle("active", i === currentIndex) });
+}
+
+function updateLikeBtn(){
+  const currentItem = data[currentIndex];
+  const isLiked = likes[currentItem.id] === true;
+
+  //Actualizar el boton visualmente
+  likeBtn.textContent = isLiked ? " ❤️ " : " 🤍 ";
+  likeBtn.classList.toggle("on", isLiked);
+  likeBtn.setAttribute("aria-pressed", isLiked);
+}
 
 // Funcion cambiar de imagen
 function changeSlide( newIndex ){
@@ -70,7 +94,7 @@ function changeSlide( newIndex ){
 };
 
 function nextSlide(){
-  const newIndex = (current +1) % data.length;
+  const newIndex = (currentIndex +1 ) % data.length;
   changeSlide( newIndex );
 }
 
@@ -88,17 +112,27 @@ function starAutoPlay (){
   updatePlayButton();
 }
 
+function stopAutoPLay(){
+  cleanInterval(autoPlayId);
+  autoPlayId = null;
+  isPlaying = false;
+  updatePlayButton();
+}
+
+function toggleAutoPlay(){
+  if( isPlaying ){
+    stopAutoPLay();
+  } else {
+    starAutoPlay();
+  }
+}
+
 // Evento para manejar el click del boton me gusta
 likeBtn.addEventListener("click", () => {
   const currentItem = data [currentIndex];
   //cambiar de true a false
   likes[currentItem.id] = !likes[currentItem.id];
-  const isLiked = likes[currentItem.id];
-
-  //Actualizar el boton visualmente
-  likeBtn.textContent = isLiked ? " ❤️ " : " 🤍 ";
-  likeBtn.classList.toggle("on", isLiked);
-  likeBtn.setAttribute("aria-pressed", isLiked);
+  updateLikeBtn();
 });
 
 //Evento para manejar clicks en las imagenes
@@ -107,10 +141,25 @@ thumbs.addEventListener("click", (e) => {
   if (!thumb) return; // Si no se hizo click en una miniatura, salir
 
   // Obtener el indice de la miniatura desde el atributo data-index
-  currentIndex = Number(thumb.dataset.index);
+  const newIndex = Number(thumb.dataset.index);
+  if (newIndex === currentIndex) return;
+  changeSlide( newIndex );
+});
 
-  //Actualizar el visor principal
-  renderHero( currentIndex );
+nextBtn.addEventListener("click", nextSlide);
+
+prevBtn.addEventListener("click", prevSlide);
+
+playBtn.addEventListener("click", toggleAutoPlay);
+
+//Eventos para el teclado
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowRight") {
+    nextSlide();
+  }
+  if (e.key === "ArrowLeft") {
+    prevSlide();
+  }
 });
 
 renderThumbs();
