@@ -1,33 +1,33 @@
 const data = [
   { id: "p01", title: "Montaña", desc: "Rocas y niebla", src: "https://picsum.photos/id/1018/1200/675" },
   { id: "p02", title: "Amanecer", desc: "Luz suave y cielo polar", src: "https://picsum.photos/id/1015/1200/675" },
-  { id: "p03", title: "Río", desc: "Paseo reflexiv por el rio", src: "https://picsum.photos/id/1011/1200/675" },
-  { id: "p04", title: "Alaska", desc: "Fauna salvaje de alaska", src: "https://picsum.photos/id/1020/1200/675" },
+  { id: "p03", title: "Río", desc: "Paseo reflexivo por el río", src: "https://picsum.photos/id/1011/1200/675" },
+  { id: "p04", title: "Alaska", desc: "Fauna salvaje de Alaska", src: "https://picsum.photos/id/1020/1200/675" },
   { id: "p05", title: "Desierto", desc: "Atardecer en el desierto", src: "https://picsum.photos/id/1016/1200/675" },
-  { id: "p06", title: "", desc: "Lago en perspectiva", src: "https://picsum.photos/id/1005/1200/675" }
+  { id: "p06", title: "Lago", desc: "Lago en perspectiva", src: "https://picsum.photos/id/1005/1200/675" }
 ];
 
-//Seleccion de elementos del DOM
+// Selección de elementos del DOM
 const thumbs = document.querySelector("#thumbs");
 const heroImg = document.querySelector("#heroImg");
-const heroTitle = document.querySelector('#heroTitle');
-const heroDesc = document.querySelector('#heroDesc');
-const likeBtn = document.querySelector('#likeBtn');
-const counter = document.querySelector('#counter');
+const heroTitle = document.querySelector("#heroTitle");
+const heroDesc = document.querySelector("#heroDesc");
+const likeBtn = document.querySelector("#likeBtn");
+const counter = document.querySelector("#counter");
 
-const prevBtn = document.querySelector("#prevBtn") ;
+const prevBtn = document.querySelector("#prevBtn");
 const nextBtn = document.querySelector("#nextBtn");
 const playBtn = document.querySelector("#playBtn");
 
-// Variables para el estado de la aplicacion
+// Estado de la aplicación
 let currentIndex = 0;
-let likes = {};
+const likes = {};
 
 let autoPlayId = null;
 let isPlaying = false;
-const AUTO_TIME = 3000; // Tiempo en milisegundos para el autoplay
+const AUTO_TIME = 3000; // milisegundos entre imágenes
 
-// Funcion par arenderizar miniaturas
+// Renderizar miniaturas
 function renderThumbs() {
   thumbs.innerHTML = data.map((item, index) => {
     return `
@@ -39,120 +39,113 @@ function renderThumbs() {
   }).join("");
 }
 
-// Funcion para renderizar imagen en el visor principal
-function renderHero( index ){
-  //recuperar el elemento acorde al indice
-  const item = data[index];
-
-  //actualizar imagen principal
-  heroImg.src = item.src;
-  heroImg.alt = item.title;
-
-  //actualiar titulo y descripcion
-  heroTitle.textContent = item.title;
-  heroDesc.textContent = item.desc;
-
-  //Actualizar el contador de las imagenes
-  updateCounter();
-  updateActiveThumb();
-  updateLikeBtn();
-}
-
-// Actualizar el boton de reproduccion
-function updatePlayButton(){
+// Actualizar el botón de reproducción
+function updatePlayButton() {
   playBtn.textContent = isPlaying ? "⏸️" : "▶️";
   playBtn.dataset.state = isPlaying ? "stop" : "play";
 }
 
-function updateCounter(){
-  counter.textContent = `${ currentIndex + 1} / ${data.length}`;
-}
- //Cambio en la miniatura
-function updateActiveThumb(){
-  document.querySelectorAll(".thumb").forEach( (thumb, i)=>{
-  thumb.classList.toggle("active", i === currentIndex) });
+function updateCounter() {
+  counter.textContent = `${currentIndex + 1} / ${data.length}`;
 }
 
-function updateLikeBtn(){
+// Cambio en la miniatura activa
+function updateActiveThumb() {
+  document.querySelectorAll(".thumb").forEach((thumb, i) => {
+    thumb.classList.toggle("active", i === currentIndex);
+  });
+}
+
+function updateLikeBtn() {
   const currentItem = data[currentIndex];
   const isLiked = likes[currentItem.id] === true;
 
-  //Actualizar el boton visualmente
   likeBtn.textContent = isLiked ? " ❤️ " : " 🤍 ";
   likeBtn.classList.toggle("on", isLiked);
   likeBtn.setAttribute("aria-pressed", isLiked);
 }
 
-// Funcion cambiar de imagen
-function changeSlide( newIndex ){
+// Renderizar imagen en el visor principal
+function renderHero(index) {
+  const item = data[index];
+
+  heroImg.src = item.src;
+  heroImg.alt = item.title;
+
+  heroTitle.textContent = item.title;
+  heroDesc.textContent = item.desc;
+
+  updateCounter();
+  updateActiveThumb();
+  updateLikeBtn();
+}
+
+// Cambiar de imagen con transición
+function changeSlide(newIndex) {
   heroImg.classList.add("fade-out");
   setTimeout(() => {
-    currentIndex= newIndex;
-    renderHero( currentIndex );
+    currentIndex = newIndex;
+    renderHero(currentIndex);
     heroImg.classList.remove("fade-out");
   }, 350);
-};
-
-function nextSlide(){
-  const newIndex = (currentIndex +1 ) % data.length;
-  changeSlide( newIndex );
 }
 
-function prevSlide(){
-  const newIndex = (currentIndex -1 + data.length) % data.length;
-  changeSlide( newIndex );
+function nextSlide() {
+  const newIndex = (currentIndex + 1) % data.length;
+  changeSlide(newIndex);
 }
 
-function starAutoPlay (){
-  autoPlayId = setInterval( () =>{
+function prevSlide() {
+  const newIndex = (currentIndex - 1 + data.length) % data.length;
+  changeSlide(newIndex);
+}
+
+function startAutoPlay() {
+  autoPlayId = setInterval(() => {
     nextSlide();
   }, AUTO_TIME);
-  
-  isPlaying= true;
+
+  isPlaying = true;
   updatePlayButton();
 }
 
-function stopAutoPLay(){
-  cleanInterval(autoPlayId);
+function stopAutoPlay() {
+  clearInterval(autoPlayId);
   autoPlayId = null;
   isPlaying = false;
   updatePlayButton();
 }
 
-function toggleAutoPlay(){
-  if( isPlaying ){
-    stopAutoPLay();
+function toggleAutoPlay() {
+  if (isPlaying) {
+    stopAutoPlay();
   } else {
-    starAutoPlay();
+    startAutoPlay();
   }
 }
 
-// Evento para manejar el click del boton me gusta
+// Botón me gusta
 likeBtn.addEventListener("click", () => {
-  const currentItem = data [currentIndex];
-  //cambiar de true a false
+  const currentItem = data[currentIndex];
   likes[currentItem.id] = !likes[currentItem.id];
   updateLikeBtn();
 });
 
-//Evento para manejar clicks en las imagenes
+// Clic en las miniaturas
 thumbs.addEventListener("click", (e) => {
   const thumb = e.target.closest(".thumb");
-  if (!thumb) return; // Si no se hizo click en una miniatura, salir
+  if (!thumb) return;
 
-  // Obtener el indice de la miniatura desde el atributo data-index
   const newIndex = Number(thumb.dataset.index);
   if (newIndex === currentIndex) return;
-  changeSlide( newIndex );
+  changeSlide(newIndex);
 });
 
 nextBtn.addEventListener("click", nextSlide);
-
 prevBtn.addEventListener("click", prevSlide);
-
 playBtn.addEventListener("click", toggleAutoPlay);
 
-//Eventos para el teclado
+// Teclado
 document.addEventListener("keydown", (e) => {
   if (e.key === "ArrowRight") {
     nextSlide();
@@ -163,4 +156,5 @@ document.addEventListener("keydown", (e) => {
 });
 
 renderThumbs();
-renderHero( currentIndex );
+renderHero(currentIndex);
+updatePlayButton();

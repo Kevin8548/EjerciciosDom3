@@ -1,0 +1,19 @@
+{
+  "name": "ejercicios-dom3",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@12.9.1",
+  "scripts": {
+    "lint:html": "htmlhint index.html",
+    "lint:css": "stylelint styles.css",
+    "lint:js": "eslint app.js",
+    "test": "pnpm lint:html && pnpm lint:css && pnpm lint:js",
+    "build": "shx rm -rf dist && shx mkdir -p dist && shx cp index.html app.js styles.css dist/"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1",
+    "htmlhint": "^1.9.2",
+    "shx": "^0.4.0",
+    "stylelint": "^18.0.0"
+  }
+}
