@@ -8,9 +8,16 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
       - name: Descargar código
         uses: actions/checkout@v4
+
+      - name: Slack - inicio
+        run: |
+          bash .github/scripts/slack.sh ":hourglass_flowing_sand: *BUILD/TEST* iniciado en ${{ github.ref_name }} por ${{ github.actor }} (<$RUN_URL|ver ejecucion>)"
 
       - name: Instalar pnpm
         uses: pnpm/action-setup@v4
@@ -25,7 +32,24 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Test
+        id: test
         run: pnpm test
 
+      - name: Slack - test OK
+        if: success()
+        run: |
+          bash .github/scripts/slack.sh ":white_check_mark: *TEST* aprobado (lint HTML, CSS y JS)"
+
       - name: Build
+        id: build
         run: pnpm build
+
+      - name: Slack - build OK
+        if: success()
+        run: |
+          bash .github/scripts/slack.sh ":package: *BUILD* generado correctamente. <$RUN_URL|ver ejecucion>"
+
+      - name: Slack - falla
+        if: failure()
+        run: |
+          bash .github/scripts/slack.sh ":x: *CI FALLO* (Test - ${{ steps.test.outcome }}, Build - ${{ steps.build.outcome }}) <$RUN_URL|ver log>"
