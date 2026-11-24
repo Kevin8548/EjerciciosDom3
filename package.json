@@ -8,7 +8,7 @@
     "lint:css": "stylelint styles.css",
     "lint:js": "eslint app.js",
     "test": "pnpm lint:html && pnpm lint:css && pnpm lint:js",
-    "build": "shx rm -rf dist && shx mkdir -p dist && shx cp index.html app.js styles.css dist/"
+    "build": "shx rm -rf dist && shx mkdir -p dist && shx cp index.html app.js styles.css dist/ && node -e \"require('fs').writeFileSync('dist/version.txt', process.env.COMMIT_REF || process.env.GITHUB_SHA || 'local')\""
   },
   "devDependencies": {
     "eslint": "^8.57.1",

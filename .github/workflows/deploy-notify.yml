@@ -1,23 +1,42 @@
 name: Deploy Notify
 
 on:
-  deployment_status:
+  push:
+    branches: [main]
 
 jobs:
   notify:
     runs-on: ubuntu-latest
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      SITE_URL: https://ejerciciosdom3.netlify.app
     steps:
       - name: Descargar código
         uses: actions/checkout@v4
 
-      - name: Slack - deploy exitoso
-        if: github.event.deployment_status.state == 'success'
+      - name: Slack - deploy iniciado
         run: |
-          bash .github/scripts/slack.sh ":globe_with_meridians: *DEPLOY* en Netlify exitoso (${{ github.event.deployment.environment }}) ${{ github.event.deployment_status.target_url }}"
+          bash .github/scripts/slack.sh ":rocket: *DEPLOY* Netlify iniciado para el commit ${GITHUB_SHA::7}"
 
-      - name: Slack - deploy fallido
-        if: github.event.deployment_status.state == 'failure' || github.event.deployment_status.state == 'error'
+      - name: Esperar a que Netlify publique
+        id: espera
         run: |
-          bash .github/scripts/slack.sh ":x: *DEPLOY* en Netlify fallo (${{ github.event.deployment.environment }})"
+          for i in $(seq 1 30); do
+            V=$(curl -s "$SITE_URL/version.txt?$RANDOM" || true)
+            if [ "$V" = "$GITHUB_SHA" ]; then
+              echo "publicado=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "publicado=false" >> "$GITHUB_OUTPUT"
+
+      - name: Slack - deploy exitoso
+        if: steps.espera.outputs.publicado == 'true'
+        run: |
+          bash .github/scripts/slack.sh ":globe_with_meridians: *DEPLOY* Netlify publicado: $SITE_URL"
+
+      - name: Slack - deploy no confirmado
+        if: steps.espera.outputs.publicado != 'true'
+        run: |
+          bash .github/scripts/slack.sh ":x: *DEPLOY* No se confirmo la publicacion en 10 minutos, revisar Netlify"
