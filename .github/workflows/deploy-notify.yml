@@ -1,0 +1,23 @@
+name: Deploy Notify
+
+on:
+  deployment_status:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Slack - deploy exitoso
+        if: github.event.deployment_status.state == 'success'
+        run: |
+          bash .github/scripts/slack.sh ":globe_with_meridians: *DEPLOY* en Netlify exitoso (${{ github.event.deployment.environment }}) ${{ github.event.deployment_status.target_url }}"
+
+      - name: Slack - deploy fallido
+        if: github.event.deployment_status.state == 'failure' || github.event.deployment_status.state == 'error'
+        run: |
+          bash .github/scripts/slack.sh ":x: *DEPLOY* en Netlify fallo (${{ github.event.deployment.environment }})"
