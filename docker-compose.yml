@@ -1,0 +1,39 @@
+services:
+  galeria:
+    image: kevinarroyolopez/ejercicios-dom3:latest
+    container_name: galeria
+    ports:
+      - "8080:80"
+    restart: always
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  watchtower:
+    image: nickfedor/watchtower
+    container_name: watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_LABEL_ENABLE=true
+      - WATCHTOWER_POLL_INTERVAL=30
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_NOTIFICATION_URL=slack://hook:${SLACK_TOKEN}@webhook
+
+  watcher:
+    image: docker:cli
+    container_name: operate-watcher
+    restart: always
+    environment:
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        apk add --no-cache curl >/dev/null
+        send() { curl -s -X POST -H 'Content-type: application/json' --data "{\"text\":\"$$1\"}" "$$SLACK_WEBHOOK_URL" >/dev/null; }
+        send ":eyes: *OPERATE* Vigilando el contenedor galeria"
+        docker events --filter container=galeria --filter event=start --filter event=die --filter event=restart --format '{{.Action}}' | while read a; do
+          send ":gear: *OPERATE* Contenedor galeria - evento: $$a"
+        done

@@ -2,7 +2,7 @@ name: Release
 
 on:
   push:
-    tags: ['v*']
+    branches: [main]
 
 jobs:
   release:
@@ -10,13 +10,14 @@ jobs:
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      VERSION: v1.0.${{ github.run_number }}
     steps:
       - name: Descargar código
         uses: actions/checkout@v4
 
       - name: Slack - inicio
         run: |
-          bash .github/scripts/slack.sh ":rocket: *RELEASE* ${{ github.ref_name }} iniciado (<$RUN_URL|ver ejecucion>)"
+          bash .github/scripts/slack.sh ":rocket: *RELEASE* $VERSION iniciado (<$RUN_URL|ver ejecucion>)"
 
       - name: Instalar pnpm
         uses: pnpm/action-setup@v4
@@ -27,9 +28,10 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Instalar dependencias y build
+      - name: Instalar dependencias y test
         run: |
           pnpm install --frozen-lockfile
+          pnpm test
           pnpm build
 
       - name: Login en Docker Hub
@@ -44,15 +46,15 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/ejercicios-dom3:${{ github.ref_name }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/ejercicios-dom3:${{ env.VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/ejercicios-dom3:latest
 
       - name: Slack - release OK
         if: success()
         run: |
-          bash .github/scripts/slack.sh ":whale: *RELEASE* publicado en Docker Hub - ejercicios-dom3:${{ github.ref_name }}"
+          bash .github/scripts/slack.sh ":whale: *RELEASE* publicado en Docker Hub - ejercicios-dom3:$VERSION"
 
       - name: Slack - falla
         if: failure()
         run: |
-          bash .github/scripts/slack.sh ":x: *RELEASE* ${{ github.ref_name }} fallo. <$RUN_URL|ver log>"
+          bash .github/scripts/slack.sh ":x: *RELEASE* $VERSION fallo. <$RUN_URL|ver log>"
