@@ -10,7 +10,7 @@ jobs:
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      VERSION: v1.0.${{ github.run_number }}
+      VERSION: v1.1.${{ github.run_number }}
     steps:
       - name: Descargar código
         uses: actions/checkout@v4

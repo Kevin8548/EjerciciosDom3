@@ -1,0 +1,35 @@
+name: Monitor
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL a revisar (vacio = sitio real)"
+        required: false
+        default: ""
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      SITE_URL: ${{ github.event.inputs.url != '' && github.event.inputs.url || 'https://ejerciciosdom3.netlify.app' }}
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Revisar sitio
+        run: |
+          CODE=$(curl -s -o /dev/null -m 15 -w "%{http_code}" "$SITE_URL" || echo 000)
+          echo "Codigo HTTP: $CODE"
+          if [ "$CODE" = "200" ]; then
+            echo "Sitio OK"
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              bash .github/scripts/slack.sh ":large_green_circle: *MONITOR* $SITE_URL responde OK (HTTP 200)"
+            fi
+          else
+            bash .github/scripts/slack.sh ":red_circle: *MONITOR* $SITE_URL esta CAIDO (HTTP $CODE)"
+            exit 1
+          fi
