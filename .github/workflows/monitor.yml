@@ -13,23 +13,52 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      GH_TOKEN: ${{ github.token }}
       SITE_URL: ${{ github.event.inputs.url != '' && github.event.inputs.url || 'https://ejerciciosdom3.netlify.app' }}
     steps:
       - name: Descargar código
         uses: actions/checkout@v4
 
       - name: Revisar sitio
+        id: check
         run: |
           CODE=$(curl -s -o /dev/null -m 15 -w "%{http_code}" "$SITE_URL" || echo 000)
           echo "Codigo HTTP: $CODE"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
           if [ "$CODE" = "200" ]; then
-            echo "Sitio OK"
-            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-              bash .github/scripts/slack.sh ":large_green_circle: *MONITOR* $SITE_URL responde OK (HTTP 200)"
-            fi
+            echo "status=up" >> "$GITHUB_OUTPUT"
           else
-            bash .github/scripts/slack.sh ":red_circle: *MONITOR* $SITE_URL esta CAIDO (HTTP $CODE)"
-            exit 1
+            echo "status=down" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Ver resultado de la ejecucion anterior
+        id: previo
+        if: github.event_name == 'schedule'
+        run: |
+          PREV=$(gh run list --workflow monitor.yml --event schedule --status completed --limit 1 --json conclusion --jq '.[0].conclusion' -R "${{ github.repository }}" || echo "")
+          echo "previo=$PREV" >> "$GITHUB_OUTPUT"
+          echo "Resultado anterior: $PREV"
+
+      - name: Slack - manual OK
+        if: github.event_name == 'workflow_dispatch' && steps.check.outputs.status == 'up'
+        run: |
+          bash .github/scripts/slack.sh ":large_green_circle: *MONITOR* $SITE_URL responde OK (HTTP ${{ steps.check.outputs.code }})"
+
+      - name: Slack - caido
+        if: steps.check.outputs.status == 'down'
+        run: |
+          bash .github/scripts/slack.sh ":red_circle: *MONITOR* $SITE_URL esta CAIDO (HTTP ${{ steps.check.outputs.code }})"
+
+      - name: Slack - recuperado
+        if: github.event_name == 'schedule' && steps.check.outputs.status == 'up' && steps.previo.outputs.previo == 'failure'
+        run: |
+          bash .github/scripts/slack.sh ":large_green_circle: *MONITOR* $SITE_URL se RECUPERO (HTTP ${{ steps.check.outputs.code }})"
+
+      - name: Marcar fallo si esta caido
+        if: steps.check.outputs.status == 'down'
+        run: exit 1
